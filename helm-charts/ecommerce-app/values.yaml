@@ -1,0 +1,15 @@
+frontend:
+  image: anshbahl7/frontend:latest
+  port: 3000
+
+product:
+  image: anshbahl7/product-service:latest
+  port: 3002
+
+order:
+  image: anshbahl7/order-service:latest
+  port: 3001
+
+user:
+  image: anshbahl7/user-service:latest
+  port: 3003
