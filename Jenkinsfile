@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "anshbahl4/frontend" // Change as needed
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        DOCKER_IMAGE = "anshbahl4/frontend"
+        IMAGE_TAG = "${BUILD_NUMBER}" // Correct Groovy syntax, no need for env. prefix inside env{}
     }
 
     stages {
@@ -15,7 +15,11 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:$IMAGE_TAG ./services/frontend'
+                // Debug: Show contents to confirm Dockerfile presence
+                sh 'ls -l services/frontend'
+                
+                // Build the Docker image
+                sh 'docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} services/frontend'
             }
         }
 
@@ -24,7 +28,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push $DOCKER_IMAGE:$IMAGE_TAG
+                        docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
                     '''
                 }
             }
@@ -32,12 +36,12 @@ pipeline {
 
         stage('Deploy with Helm') {
             steps {
-                sh """
-                  helm upgrade --install frontend ./helm-charts/frontend \
-                  --namespace dev --create-namespace \
-                  --set image.repository=$DOCKER_IMAGE \
-                  --set image.tag=$IMAGE_TAG
-                """
+                sh '''
+                    helm upgrade --install frontend ./helm-charts/frontend \
+                    --namespace dev --create-namespace \
+                    --set image.repository=${DOCKER_IMAGE} \
+                    --set image.tag=${IMAGE_TAG}
+                '''
             }
         }
     }
