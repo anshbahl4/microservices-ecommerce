@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "anshbahl4/frontend"
+        DOCKER_IMAGE = "anshbahl7/frontend"
         IMAGE_TAG = "${BUILD_NUMBER}" // Correct Groovy syntax, no need for env. prefix inside env{}
     }
 
