@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "anshbahl7/frontend"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
@@ -13,20 +12,24 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                sh 'ls -l services/frontend'
-                sh 'docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} services/frontend'
-            }
-        }
-
-        stage('Push to DockerHub') {
+        stage('Build & Push Docker Images') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
-                    '''
+                    script {
+                        def services = ['frontend', 'product-service', 'order-service', 'user-service']
+                        for (service in services) {
+                            def imageName = "anshbahl7/${service}"
+                            def servicePath = "services/${service}"
+
+                            sh """
+                                echo "Building image for ${service}..."
+                                docker build -t ${imageName}:${IMAGE_TAG} ${servicePath}
+
+                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                                docker push ${imageName}:${IMAGE_TAG}
+                            """
+                        }
+                    }
                 }
             }
         }
@@ -34,12 +37,18 @@ pipeline {
         stage('Deploy with Helm') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh '''
-                        helm upgrade --install frontend ./helm-charts/frontend \
+                    sh """
+                        helm upgrade --install ecommerce-app ./helm-charts/ecommerce-app \
                         --namespace dev --create-namespace \
-                        --set image.repository=${DOCKER_IMAGE} \
-                        --set image.tag=${IMAGE_TAG}
-                    '''
+                        --set frontend.image.repository=anshbahl7/frontend \
+                        --set frontend.image.tag=${IMAGE_TAG} \
+                        --set product.image.repository=anshbahl7/product-service \
+                        --set product.image.tag=${IMAGE_TAG} \
+                        --set order.image.repository=anshbahl7/order-service \
+                        --set order.image.tag=${IMAGE_TAG} \
+                        --set user.image.repository=anshbahl7/user-service \
+                        --set user.image.tag=${IMAGE_TAG}
+                    """
                 }
             }
         }
