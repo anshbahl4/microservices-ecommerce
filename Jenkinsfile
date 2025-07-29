@@ -3,32 +3,41 @@ pipeline {
 
     environment {
         IMAGE_TAG = "${BUILD_NUMBER}"
+        DOCKER_IMAGE = "anshbahl7/frontend"
+        PRODUCT_IMAGE = "anshbahl7/product-service"
+        ORDER_IMAGE = "anshbahl7/order-service"
+        USER_IMAGE = "anshbahl7/user-service"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clone repository') {
             steps {
-                git branch: 'master', url: 'https://github.com/anshbahl4/microservices-ecommerce.git'
+                git 'https://github.com/anshbahl4/microservices-ecommerce.git'
             }
         }
 
-        stage('Build & Push Docker Images') {
+        stage('Build Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                script {
+                    docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}", './frontend')
+                    docker.build("${PRODUCT_IMAGE}:${IMAGE_TAG}", './product')
+                    docker.build("${ORDER_IMAGE}:${IMAGE_TAG}", './order')
+                    docker.build("${USER_IMAGE}:${IMAGE_TAG}", './user')
+                }
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                     script {
-                        def services = ['frontend', 'product-service', 'order-service', 'user-service']
-                        for (service in services) {
-                            def imageName = "anshbahl7/${service}"
-                            def servicePath = "services/${service}"
-
-                            sh """
-                                echo "Building image for ${service}..."
-                                docker build -t ${imageName}:${IMAGE_TAG} ${servicePath}
-
-                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                                docker push ${imageName}:${IMAGE_TAG}
-                            """
-                        }
+                        sh """
+                        echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+                        docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
+                        docker push ${PRODUCT_IMAGE}:${IMAGE_TAG}
+                        docker push ${ORDER_IMAGE}:${IMAGE_TAG}
+                        docker push ${USER_IMAGE}:${IMAGE_TAG}
+                        """
                     }
                 }
             }
@@ -37,18 +46,20 @@ pipeline {
         stage('Deploy with Helm') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    sh """
+                    script {
+                        sh """
                         helm upgrade --install ecommerce-app ./helm-charts/ecommerce-app \
                         --namespace dev --create-namespace \
-                        --set frontend.image.repository=anshbahl7/frontend \
+                        --set frontend.image.repository=${DOCKER_IMAGE} \
                         --set frontend.image.tag=${IMAGE_TAG} \
-                        --set product.image.repository=anshbahl7/product-service \
+                        --set product.image.repository=${PRODUCT_IMAGE} \
                         --set product.image.tag=${IMAGE_TAG} \
-                        --set order.image.repository=anshbahl7/order-service \
+                        --set order.image.repository=${ORDER_IMAGE} \
                         --set order.image.tag=${IMAGE_TAG} \
-                        --set user.image.repository=anshbahl7/user-service \
+                        --set user.image.repository=${USER_IMAGE} \
                         --set user.image.tag=${IMAGE_TAG}
-                    """
+                        """
+                    }
                 }
             }
         }
