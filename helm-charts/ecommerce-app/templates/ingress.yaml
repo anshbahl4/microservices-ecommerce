@@ -10,14 +10,14 @@ spec:
       http:
         paths:
           - path: /frontend(/|$)(.*)
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: frontend-service
                 port:
                   number: 3000
 
-          - path: /product
+          - path: /product(/|$)(.*)
             pathType: Prefix
             backend:
               service:
@@ -25,7 +25,7 @@ spec:
                 port:
                   number: 3002
 
-          - path: /order
+          - path: /order(/|$)(.*)
             pathType: Prefix
             backend:
               service:
@@ -33,7 +33,7 @@ spec:
                 port:
                   number: 3001
 
-          - path: /user
+          - path: /user(/|$)(.*)
             pathType: Prefix
             backend:
               service:
