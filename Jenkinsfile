@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "anshbahl7/frontend"
-        IMAGE_TAG = "${BUILD_NUMBER}" // Correct Groovy syntax, no need for env. prefix inside env{}
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -15,10 +15,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Debug: Show contents to confirm Dockerfile presence
                 sh 'ls -l services/frontend'
-                
-                // Build the Docker image
                 sh 'docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} services/frontend'
             }
         }
@@ -36,12 +33,14 @@ pipeline {
 
         stage('Deploy with Helm') {
             steps {
-                sh '''
-                    helm upgrade --install frontend ./helm-charts/frontend \
-                    --namespace dev --create-namespace \
-                    --set image.repository=${DOCKER_IMAGE} \
-                    --set image.tag=${IMAGE_TAG}
-                '''
+                withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                    sh '''
+                        helm upgrade --install frontend ./helm-charts/frontend \
+                        --namespace dev --create-namespace \
+                        --set image.repository=${DOCKER_IMAGE} \
+                        --set image.tag=${IMAGE_TAG}
+                    '''
+                }
             }
         }
     }
