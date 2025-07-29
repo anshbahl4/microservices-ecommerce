@@ -19,10 +19,10 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}", './frontend')
-                    docker.build("${PRODUCT_IMAGE}:${IMAGE_TAG}", './product')
-                    docker.build("${ORDER_IMAGE}:${IMAGE_TAG}", './order')
-                    docker.build("${USER_IMAGE}:${IMAGE_TAG}", './user')
+                    docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}", 'services/frontend')
+                    docker.build("${PRODUCT_IMAGE}:${IMAGE_TAG}", 'services/product-service')
+                    docker.build("${ORDER_IMAGE}:${IMAGE_TAG}", 'services/order-service')
+                    docker.build("${USER_IMAGE}:${IMAGE_TAG}", 'services/user-service')
                 }
             }
         }
