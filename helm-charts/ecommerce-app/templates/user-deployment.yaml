@@ -16,4 +16,4 @@ spec:
         - name: user
           image: {{ .Values.user.image.repository }}:{{ .Values.user.image.tag }}
           ports:
-            - containerPort: {{ .Values.user.port }}
+            - containerPort: {{ .Values.user.service.port }}

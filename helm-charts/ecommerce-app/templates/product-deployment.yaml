@@ -16,4 +16,4 @@ spec:
         - name: product
           image: {{ .Values.product.image.repository }}:{{ .Values.product.image.tag }}
           ports:
-            - containerPort: {{ .Values.product.port }}
+            - containerPort: {{ .Values.product.service.port }}

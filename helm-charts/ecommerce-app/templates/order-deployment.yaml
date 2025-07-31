@@ -16,4 +16,4 @@ spec:
         - name: order
           image: {{ .Values.order.image.repository }}:{{ .Values.order.image.tag }}
           ports:
-            - containerPort: {{ .Values.order.port }}
+            - containerPort: {{ .Values.order.service.port }}

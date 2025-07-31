@@ -47,18 +47,21 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
                     script {
-                        sh """
-                        helm upgrade --install ecommerce-app ./helm-charts/ecommerce-app \
-                        --namespace dev --create-namespace \
-                        --set frontend.image.repository=${DOCKER_IMAGE} \
-                        --set frontend.image.tag=${IMAGE_TAG} \
-                        --set product.image.repository=${PRODUCT_IMAGE} \
-                        --set product.image.tag=${IMAGE_TAG} \
-                        --set order.image.repository=${ORDER_IMAGE} \
-                        --set order.image.tag=${IMAGE_TAG} \
-                        --set user.image.repository=${USER_IMAGE} \
-                        --set user.image.tag=${IMAGE_TAG}
-                        """
+                        // ✅ SETTING THE ENVIRONMENT VARIABLE PROPERLY
+                        withEnv(["KUBECONFIG=$KUBECONFIG"]) {
+                            sh """
+                            helm upgrade --install ecommerce-app ./helm-charts/ecommerce-app \
+                            --namespace dev --create-namespace \
+                            --set frontend.image.repository=${DOCKER_IMAGE} \
+                            --set frontend.image.tag=${IMAGE_TAG} \
+                            --set product.image.repository=${PRODUCT_IMAGE} \
+                            --set product.image.tag=${IMAGE_TAG} \
+                            --set order.image.repository=${ORDER_IMAGE} \
+                            --set order.image.tag=${IMAGE_TAG} \
+                            --set user.image.repository=${USER_IMAGE} \
+                            --set user.image.tag=${IMAGE_TAG}
+                            """
+                        }
                     }
                 }
             }
